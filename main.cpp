@@ -1,13 +1,30 @@
+#include <GL/glew.h>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+using namespace glm;
+
+#include <common/texture.hpp>
+#include <common/controls.hpp>
+#include <common/objloader.hpp>
+#include <common/vboindexer.hpp>
+#include <common/text2D.hpp>
+
+#include <common/model.hpp>
 
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 
+#include <vector>
+
 #include "Include/shader.h"
 
+
+GLFWwindow* createWindow(char* title, int width, int height);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
@@ -17,41 +34,16 @@ const unsigned int SRC_HEIGHT = 600;
 int main(int argc, char** argv) {
 
     static const GLfloat g_vertex_buffer_data[] =
-            {-1.0f, -1.0f, 0.0f,
-            1.0f, -1.0f, 0.0f,
-            0.0f, 1.0f, 0.0f};
+            {-0.5f, -0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+            0.0f, 0.5f, 0.0f};
 
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //OpenGL 3.3
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //不用老版本的OpenGL
+    char* title = (char *) "Demo";
 
-
-
-
-
-    #ifdef __APPLE__
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    #endif
-
-
-
-    GLFWwindow* window = glfwCreateWindow(SRC_WIDTH, SRC_HEIGHT, "Demo", nullptr, nullptr);
+    auto window = createWindow(title, SRC_WIDTH, SRC_HEIGHT);
 
     if(window == nullptr)
     {
-        std::cout<<"Create window fail"<<std::endl;
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwMakeContextCurrent(window);
-
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout<<"Fail to initialize glad"<<std::endl;
         return -1;
     }
 
@@ -59,6 +51,17 @@ int main(int argc, char** argv) {
     glGenVertexArrays(1, &vertexArrayID);
     glBindVertexArray(vertexArrayID);
 
+
+    Mesh ninjaHead("ninjaHead.obj");
+    vector<vec3> colors(ninjaHead.vertex_size);
+    for(auto &color: colors)
+    {
+        color.r = 0.7f;
+        color.g = 0.8f;
+        color.b = 0.6f;
+    }
+
+    ninjaHead.setAtrribute(Color, (void*)&colors[0], (unsigned int) (colors.size() * sizeof(vec3)));
 
     //用于标示我们的顶点缓冲
     GLuint vertextBuffer;
@@ -94,6 +97,45 @@ int main(int argc, char** argv) {
 
     return EXIT_SUCCESS;
 
+}
+
+GLFWwindow* createWindow(char* title, int width, int height)
+{
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //OpenGL 3.3
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //不用老版本的OpenGL
+
+
+
+
+
+    #ifdef __APPLE__
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    #endif
+
+
+
+    GLFWwindow* window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+
+    if(window == nullptr)
+    {
+        std::cout<<"Create window fail"<<std::endl;
+        glfwTerminate();
+        return nullptr;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout<<"Fail to initialize glad"<<std::endl;
+        return nullptr;
+    }
+
+    return window;
 }
 
 
