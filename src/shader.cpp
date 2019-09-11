@@ -1,5 +1,4 @@
 #include "../Include/shader.h"
-#include<glad/glad.h>
 
 //构造器
 Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath)

@@ -1,6 +1,9 @@
+#include <cstdio>
+#include <cstdlib>
+
 #include <GL/glew.h>
 
-#include <glad/glad.h>
+//#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -15,13 +18,18 @@ using namespace glm;
 
 #include <common/model.hpp>
 
-#include <cstdio>
-#include <cstdlib>
+
 #include <iostream>
 
 #include <vector>
 
+
 #include "Include/shader.h"
+
+
+
+
+
 
 
 GLFWwindow* createWindow(char* title, int width, int height);
@@ -47,10 +55,26 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+
+
     GLuint vertexArrayID;
     glGenVertexArrays(1, &vertexArrayID);
     glBindVertexArray(vertexArrayID);
 
+
+    // Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
+    mat4 Projection = perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+    // Camera matrix
+    mat4 View = lookAt(
+            vec3(0, 0, 5), // Camera is at (4,3,-3), in World Space
+            vec3(0, 0, 0), // and looks at the origin
+            vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+    );
+    // Model matrix : an identity matrix (model will be at the origin)
+    mat4 Model = mat4(1.0f);
+
+    // Our ModelViewProjection : multiplication of our 3 matrices
+    mat4 MVP = Projection * View * Model;
 
     Mesh ninjaHead("ninjaHead.obj");
     vector<vec3> colors(ninjaHead.vertex_size);
@@ -64,10 +88,10 @@ int main(int argc, char** argv) {
     ninjaHead.setAtrribute(Color, (void*)&colors[0], (unsigned int) (colors.size() * sizeof(vec3)));
 
     //用于标示我们的顶点缓冲
-    GLuint vertextBuffer;
-    glGenBuffers(1, &vertextBuffer);//生成一个缓冲区，并将该缓冲区的标识给vertexBuffer
-    glBindBuffer(GL_ARRAY_BUFFER, vertextBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);//将顶点传给OpenGL
+//    GLuint vertextBuffer;
+//    glGenBuffers(1, &vertextBuffer);//生成一个缓冲区，并将该缓冲区的标识给vertexBuffer
+//    glBindBuffer(GL_ARRAY_BUFFER, vertextBuffer);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);//将顶点传给OpenGL
 
     Shader shader("shader/vertexshader.glsl", "shader/fragmentshader.glsl");
 
@@ -81,12 +105,38 @@ int main(int argc, char** argv) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertextBuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        shader.setMatrix4("matrix", MVP);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // 1rst attribute buffer : vertices
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, ninjaHead.pos_id);
+        glVertexAttribPointer(
+                0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+        );
+
+        // 2nd attribute buffer : colors
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, ninjaHead.color_id);
+        glVertexAttribPointer(
+                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+                3,                                // size
+                GL_FLOAT,                         // type
+                GL_FALSE,                         // normalized?
+                0,                                // stride
+                (void*)0                          // array buffer offset
+        );
+
+        // Draw the triangle !
+
+        glDrawArrays(GL_TRIANGLES, 0, ninjaHead.vertex_size); // 12*3 indices starting at 0 -> 12 triangles
+
         glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
 
         glfwSwapBuffers(window);
 
@@ -129,9 +179,10 @@ GLFWwindow* createWindow(char* title, int width, int height)
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    //glewExperimental = true;
+    if(glewInit() != GLEW_OK)
     {
-        std::cout<<"Fail to initialize glad"<<std::endl;
+        std::cout<<"Fail to initialize glew"<<std::endl;
         return nullptr;
     }
 
