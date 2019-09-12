@@ -1,22 +1,22 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <GL/glew.h>
+//#include <GL/glew.h>
 
-//#include <glad/glad.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 using namespace glm;
 
-#include <common/texture.hpp>
-#include <common/controls.hpp>
-#include <common/objloader.hpp>
-#include <common/vboindexer.hpp>
-#include <common/text2D.hpp>
+#include "Include/common/texture.hpp"
+#include "Include/common/controls.hpp"
+#include "Include/common/objloader.hpp"
+#include "Include/common/vboindexer.hpp"
+#include "Include/common/text2D.hpp"
 
-#include <common/model.hpp>
+#include "Include/common/model.hpp"
 
 
 #include <iostream>
@@ -29,7 +29,7 @@ using namespace glm;
 
 
 
-
+GLFWwindow* window;
 
 
 GLFWwindow* createWindow(char* title, int width, int height);
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
 
     char* title = (char *) "Demo";
 
-    auto window = createWindow(title, SRC_WIDTH, SRC_HEIGHT);
+    window = createWindow(title, SRC_WIDTH, SRC_HEIGHT);
 
     if(window == nullptr)
     {
@@ -180,9 +180,9 @@ GLFWwindow* createWindow(char* title, int width, int height)
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     //glewExperimental = true;
-    if(glewInit() != GLEW_OK)
+    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cout<<"Fail to initialize glew"<<std::endl;
+        std::cout<<"Fail to initialize glad"<<std::endl;
         return nullptr;
     }
 
